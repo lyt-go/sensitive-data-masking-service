@@ -102,15 +102,5 @@ func (s *Service) TransitionMaskTaskStatus(id string, toStatus string) (*model.M
 }
 
 func (s *Service) AdvanceMaskTaskProgress(id string, delta int) (*model.MaskTask, error) {
-	t, err := s.store.GetMaskTask(id)
-	if err != nil {
-		return nil, err
-	}
-	if err := t.AdvanceProgress(delta); err != nil {
-		return nil, err
-	}
-	if err := s.store.UpdateMaskTask(t); err != nil {
-		return nil, err
-	}
-	return t, nil
+	return s.store.AdvanceMaskTaskProgress(id, delta)
 }

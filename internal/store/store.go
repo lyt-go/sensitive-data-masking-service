@@ -37,6 +37,9 @@ type Store interface {
 	ListMaskTasks() []*model.MaskTask
 	UpdateMaskTask(t *model.MaskTask) error
 	DeleteMaskTask(id string) error
+	// AdvanceMaskTaskProgress 原子地推进任务进度：在同一把锁内读取当前进度、
+	// 累加 delta、按业务规则判定是否完成，避免并发推进时丢失更新。
+	AdvanceMaskTaskProgress(id string, delta int) (*model.MaskTask, error)
 
 	CreateMaskRecord(m *model.MaskRecord) error
 	GetMaskRecord(id string) (*model.MaskRecord, error)
