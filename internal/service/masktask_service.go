@@ -68,18 +68,28 @@ func (s *Service) UpdateMaskTask(id string, input model.MaskTask) (*model.MaskTa
 	if err := input.Validate(); err != nil {
 		return nil, err
 	}
-	t, err := s.store.GetMaskTask(id)
+	for _, rid := range input.RuleIDs {
+		if _, err := s.store.GetMaskRule(rid); err != nil {
+			if err == store.ErrNotFound {
+				return nil, model.NewValidationError("rule_ids", "规则不存在: "+rid)
+			}
+			return nil, err
+		}
+	}
+	existing, err := s.store.GetMaskTask(id)
 	if err != nil {
 		return nil, err
 	}
-	t.Name = input.Name
-	t.SourceType = input.SourceType
-	t.TotalRecords = input.TotalRecords
-	t.RuleIDs = input.RuleIDs
-	if err := s.store.UpdateMaskTask(t); err != nil {
+	// 在写入成功前不改动原任务，确保校验/写入失败时原任务保持不变。
+	updated := *existing
+	updated.Name = input.Name
+	updated.SourceType = input.SourceType
+	updated.TotalRecords = input.TotalRecords
+	updated.RuleIDs = input.RuleIDs
+	if err := s.store.UpdateMaskTask(&updated); err != nil {
 		return nil, err
 	}
-	return t, nil
+	return &updated, nil
 }
 
 func (s *Service) DeleteMaskTask(id string) error {
