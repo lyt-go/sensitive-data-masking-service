@@ -7,12 +7,11 @@ import (
 	"sync/atomic"
 )
 
-var sharedBytes [8]byte
-
 // Hex 生成 8 字节随机值的十六进制字符串（16 位）。
+//
+// 使用独立的局部 buffer，避免并发调用时共享状态被覆盖导致返回相同 ID。
 func Hex() string {
-	_, _ = rand.Read(sharedBytes[:])
-	return hex.EncodeToString(sharedBytes[:])
+	return HexN(8)
 }
 
 // HexN 生成指定字节数的十六进制 ID。
