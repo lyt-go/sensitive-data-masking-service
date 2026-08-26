@@ -86,5 +86,8 @@ func (s *Service) ApplyMaskRule(id string, input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if !r.Enabled {
+		return "", model.ErrRuleDisabled
+	}
 	return r.Apply(input), nil
 }
