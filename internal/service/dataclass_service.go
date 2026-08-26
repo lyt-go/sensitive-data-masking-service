@@ -60,13 +60,19 @@ func (s *Service) UpdateDataClass(id string, input model.DataClass) (*model.Data
 	if err != nil {
 		return nil, err
 	}
-	d.Name = input.Name
-	d.Level = input.Level
-	d.Description = input.Description
-	if err := s.store.UpdateDataClass(d); err != nil {
+	// 构造新对象再交给 store 校验落库，避免直接修改内存中的原记录：
+	// 一旦新名称与其它分类冲突，store 会返回 ErrConflict，此时原分类内容保持不变。
+	updated := &model.DataClass{
+		ID:          d.ID,
+		Name:        input.Name,
+		Level:       input.Level,
+		Description: input.Description,
+		CreatedAt:   d.CreatedAt,
+	}
+	if err := s.store.UpdateDataClass(updated); err != nil {
 		return nil, err
 	}
-	return d, nil
+	return updated, nil
 }
 
 func (s *Service) DeleteDataClass(id string) error {
