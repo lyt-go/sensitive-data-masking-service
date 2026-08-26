@@ -58,10 +58,14 @@ func (s *MemoryStore) DeleteMaskRecord(id string) error {
 func (s *MemoryStore) BatchCreateMaskRecords(records []*model.MaskRecord) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// 先校验整批记录是否都引用了已存在的脱敏任务，再统一写入。
+	// 这样任一记录的 mask_task_id 不存在时整批失败，不会留下部分处理记录。
 	for _, m := range records {
 		if _, ok := s.maskTasks[m.MaskTaskID]; !ok {
 			return ErrNotFound
 		}
+	}
+	for _, m := range records {
 		s.maskRecords[m.ID] = m
 	}
 	return nil

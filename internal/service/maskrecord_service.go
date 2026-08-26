@@ -91,18 +91,28 @@ func (s *Service) DeleteMaskRecord(id string) error {
 }
 
 func (s *Service) BatchCreateMaskRecords(inputs []model.MaskRecord) (int, error) {
-	records := make([]*model.MaskRecord, 0, len(inputs))
-	for _, input := range inputs {
-		if err := input.Validate(); err != nil {
+	// 先逐条校验，再校验所有脱敏任务是否存在；任一失败则整批不写入。
+	// 提前校验避免分配 ID 与时间戳，保证整批要么全部成功、要么全部失败。
+	for i := range inputs {
+		if err := inputs[i].Validate(); err != nil {
 			return 0, err
 		}
+		if _, err := s.store.GetMaskTask(inputs[i].MaskTaskID); err != nil {
+			if err == store.ErrNotFound {
+				return 0, model.NewValidationError("mask_task_id", "脱敏任务不存在: "+inputs[i].MaskTaskID)
+			}
+			return 0, err
+		}
+	}
+	records := make([]*model.MaskRecord, 0, len(inputs))
+	for i := range inputs {
 		records = append(records, &model.MaskRecord{
 			ID:             idgen.Hex(),
-			MaskTaskID:     input.MaskTaskID,
-			FieldName:      input.FieldName,
-			RuleID:         input.RuleID,
-			OriginalSample: input.OriginalSample,
-			MaskedSample:   input.MaskedSample,
+			MaskTaskID:     inputs[i].MaskTaskID,
+			FieldName:      inputs[i].FieldName,
+			RuleID:         inputs[i].RuleID,
+			OriginalSample: inputs[i].OriginalSample,
+			MaskedSample:   inputs[i].MaskedSample,
 			CreatedAt:      time.Now(),
 		})
 	}
