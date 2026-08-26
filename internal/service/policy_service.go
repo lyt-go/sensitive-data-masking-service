@@ -106,5 +106,12 @@ func (s *Service) EvaluatePolicy(id string) ([]*model.MaskRule, error) {
 	for _, r := range s.store.ListMaskRules() {
 		allRules[r.ID] = r
 	}
-	return p.SelectRules(allRules), nil
+	// SelectRules 返回的是指向已保存规则的指针，这里统一克隆，
+	// 确保调用方修改评估结果不会污染已保存的规则（影响后续真正执行的脱敏）。
+	selected := p.SelectRules(allRules)
+	rules := make([]*model.MaskRule, 0, len(selected))
+	for _, r := range selected {
+		rules = append(rules, r.Clone())
+	}
+	return rules, nil
 }

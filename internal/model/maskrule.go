@@ -54,6 +54,16 @@ func (r *MaskRule) Validate() error {
 	return nil
 }
 
+// Clone 返回 r 的值副本。MaskRule 的字段全部为值类型，浅拷贝即为完整副本，
+// 用于对外返回（如策略评估）时隔离调用方修改，避免污染已保存的规则。
+func (r *MaskRule) Clone() *MaskRule {
+	if r == nil {
+		return nil
+	}
+	cp := *r
+	return &cp
+}
+
 func (r *MaskRule) Apply(input string) string {
 	if input == "" {
 		return input
