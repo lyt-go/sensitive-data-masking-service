@@ -64,21 +64,40 @@ func NewLevel(level Level) *Logger {
 	}
 }
 
-func (l *Logger) SetLevel(level Level) { l.mu.Lock(); defer l.mu.Unlock(); l.level = level }
+// nil receiver 上的方法均为无操作，使得 *Logger 可作为可选依赖：
+// 调用方未配置日志器（传 nil）时不会 panic，仅静默丢弃日志。
+func (l *Logger) SetLevel(level Level) {
+	if l == nil {
+		return
+	}
+	l.mu.Lock(); defer l.mu.Unlock(); l.level = level
+}
 
 func (l *Logger) Debugf(format string, args ...interface{}) {
+	if l == nil {
+		return
+	}
 	l.mu.Lock(); defer l.mu.Unlock()
 	if l.level <= LevelDebug { l.debug.Printf(format, args...) }
 }
 func (l *Logger) Infof(format string, args ...interface{}) {
+	if l == nil {
+		return
+	}
 	l.mu.Lock(); defer l.mu.Unlock()
 	if l.level <= LevelInfo { l.info.Printf(format, args...) }
 }
 func (l *Logger) Warnf(format string, args ...interface{}) {
+	if l == nil {
+		return
+	}
 	l.mu.Lock(); defer l.mu.Unlock()
 	if l.level <= LevelWarn { l.warn.Printf(format, args...) }
 }
 func (l *Logger) Errorf(format string, args ...interface{}) {
+	if l == nil {
+		return
+	}
 	l.mu.Lock(); defer l.mu.Unlock()
 	if l.level <= LevelError { l.err.Printf(format, args...) }
 }
