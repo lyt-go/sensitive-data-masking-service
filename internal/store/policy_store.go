@@ -10,6 +10,8 @@ func (s *MemoryStore) CreatePolicy(p *model.Policy) error {
 			return ErrNotFound
 		}
 	}
+	// 防御性拷贝切片，与任务保存保持一致，避免外部修改底层数组影响已保存的策略。
+	p.RuleIDs = cloneRuleIDs(p.RuleIDs)
 	s.policies[p.ID] = p
 	return nil
 }
@@ -45,6 +47,8 @@ func (s *MemoryStore) UpdatePolicy(p *model.Policy) error {
 			return ErrNotFound
 		}
 	}
+	// 与创建时同理，拷贝切片以隔离外部可变引用。
+	p.RuleIDs = cloneRuleIDs(p.RuleIDs)
 	s.policies[p.ID] = p
 	return nil
 }
